@@ -59,8 +59,8 @@ if ($USER->IsAuthorized()) {
 			$arResult["ITEMS"] = $arUsers;
 			$arResult["COUNT"] = $count;
 			$this->SetResultCacheKeys("COUNT");
+			$this->includeComponentTemplate();
 		}
 	}
 	$APPLICATION->SetTitle("Новостей " . $arResult["COUNT"]);
-	$this->includeComponentTemplate();
 }
