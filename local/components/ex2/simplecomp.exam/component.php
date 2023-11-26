@@ -24,7 +24,15 @@ global $USER;
 global $APPLICATION;
 
 if ($USER->IsAuthorized()) {
-
+	$count = 0;
+	$arButtons = CIBlock::GetPanelButtons($arParams["NEWS_IBLOCK_ID"]);
+	$this->AddIncludeAreaIcon(
+        [
+            "TITLE" => GetMessage("SIMPLECOMP_EXAM2_ADMIN_IB"),
+            "URL" => $arButtons['submenu']['element_list']['ACTION_URL'],
+            "IN_PARAMS_MENU" => true,
+        ]
+    );
 	if ($this->StartResultCache()) {
 		$rsUser = CUser::GetByID($USER->GetID());
 		$curUserFields = $rsUser->Fetch();
@@ -35,22 +43,23 @@ if ($USER->IsAuthorized()) {
 			$arUsers[] = ["ID" => $item["ID"], "LOGIN" => $item["LOGIN"]];
 			$arUserIds[] = $item["ID"];
 		}
-		$count = 0;
-		$rsElements = CIBlockElement::GetList([], ["!PROPERTY_".$arParams["IBLOCK_CODE_AUTHORS"] => $USER->GetID(), "PROPERTY_".$arParams["IBLOCK_CODE_AUTHORS"] => $arUserIds, "IBLOCK_ID" => $arParams["NEWS_IBLOCK_ID"]], false, false, ["ID", "NAME", "IBLOCK_ID", "ACTIVE_FROM"]);
-		while ($obElement = $rsElements->GetNextElement()) {
-			$item = $obElement->GetFields();
-			$props = $obElement->GetProperty("AUTHOR");
-			unset($item["ID"]);
-			foreach ($arUsers as $key => $user) {
-				if (in_array($arUsers[$key]["ID"], $props["VALUE"])) {
-					$arUsers[$key]["NEWS"][] = $item;
+		if (!empty($arUserIds)) {
+			$rsElements = CIBlockElement::GetList([], ["!PROPERTY_".$arParams["IBLOCK_CODE_AUTHORS"] => $USER->GetID(), "PROPERTY_".$arParams["IBLOCK_CODE_AUTHORS"] => $arUserIds, "IBLOCK_ID" => $arParams["NEWS_IBLOCK_ID"]], false, false, ["ID", "NAME", "IBLOCK_ID", "ACTIVE_FROM"]);
+			while ($obElement = $rsElements->GetNextElement()) {
+				$item = $obElement->GetFields();
+				$props = $obElement->GetProperty("AUTHOR");
+				unset($item["ID"]);
+				foreach ($arUsers as $key => $user) {
+					if (in_array($arUsers[$key]["ID"], $props["VALUE"])) {
+						$arUsers[$key]["NEWS"][] = $item;
+					}
 				}
+				$count++;
 			}
-			$count++;
+			$arResult["ITEMS"] = $arUsers;
+			$arResult["COUNT"] = $count;
+			$this->SetResultCacheKeys("COUNT");
 		}
-		$arResult["ITEMS"] = $arUsers;
-		$arResult["COUNT"] = $count;
-		$this->SetResultCacheKeys("COUNT");
 	}
 	$APPLICATION->SetTitle("Новостей " . $arResult["COUNT"]);
 	$this->includeComponentTemplate();
